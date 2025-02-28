@@ -2,10 +2,11 @@ module GameNight exposing (..)
 
 import BggApi exposing (BggGame)
 import Browser
-import Html exposing (Html, button, div, h1, h2, header, input, main_, p, section, span, text)
-import Html.Attributes exposing (class, disabled, placeholder, style, value)
+import Html exposing (Html, button, div, h1, h2, header, img, input, main_, p, section, span, text)
+import Html.Attributes exposing (class, disabled, placeholder, src, style, value)
 import Html.Events exposing (onClick, onInput, onMouseEnter, onMouseLeave)
 import Http
+import Set exposing (Set)
 
 
 type Status
@@ -19,7 +20,7 @@ type alias Model =
     { username : String
     , status : Status
     , games : List BggGame
-    , selectedGame : Maybe BggGame
+    , selectedGames : Set String
     , hoveredGame : Maybe String
     }
 
@@ -29,7 +30,7 @@ init _ =
     ( { username = ""
       , status = Initial
       , games = []
-      , selectedGame = Nothing
+      , selectedGames = Set.empty
       , hoveredGame = Nothing
       }
     , Cmd.none
@@ -40,7 +41,7 @@ type Msg
     = UpdateUsername String
     | SubmitUsername
     | GotGames (Result Http.Error (List BggGame))
-    | SelectGame BggGame
+    | ToggleGameSelection BggGame
     | ClearSelection
     | HoverGame String
     | UnhoverGame
@@ -72,11 +73,20 @@ update msg model =
                     , Cmd.none
                     )
 
-        SelectGame game ->
-            ( { model | selectedGame = Just game }, Cmd.none )
+        ToggleGameSelection game ->
+            ( { model
+                | selectedGames =
+                    if Set.member game.id model.selectedGames then
+                        Set.remove game.id model.selectedGames
+
+                    else
+                        Set.insert game.id model.selectedGames
+              }
+            , Cmd.none
+            )
 
         ClearSelection ->
-            ( { model | selectedGame = Nothing }, Cmd.none )
+            ( { model | selectedGames = Set.empty }, Cmd.none )
 
         HoverGame name ->
             ( { model | hoveredGame = Just name }, Cmd.none )
@@ -192,7 +202,10 @@ view model =
                         (\game ->
                             div
                                 [ style "background"
-                                    (if model.hoveredGame == Just game.name then
+                                    (if Set.member game.id model.selectedGames then
+                                        "#e0f0ff"
+
+                                     else if model.hoveredGame == Just game.name then
                                         "#e8e8e8"
 
                                      else
@@ -209,15 +222,37 @@ view model =
                                      else
                                         "none"
                                     )
-                                , onClick (SelectGame game)
+                                , style "border"
+                                    (if Set.member game.id model.selectedGames then
+                                        "2px solid #4CAF50"
+
+                                     else
+                                        "none"
+                                    )
+                                , onClick (ToggleGameSelection game)
                                 , Html.Events.onMouseEnter (HoverGame game.name)
                                 , Html.Events.onMouseLeave UnhoverGame
                                 ]
-                                [ h2
-                                    [ style "margin" "0 0 10px 0"
-                                    , style "font-size" "1.2em"
+                                [ div
+                                    [ style "display" "flex"
+                                    , style "align-items" "center"
+                                    , style "gap" "15px"
+                                    , style "margin-bottom" "10px"
                                     ]
-                                    [ text game.name ]
+                                    [ img
+                                        [ style "width" "50px"
+                                        , style "height" "50px"
+                                        , style "object-fit" "cover"
+                                        , style "border-radius" "4px"
+                                        , src game.thumbnail
+                                        ]
+                                        []
+                                    , h2
+                                        [ style "margin" "0"
+                                        , style "font-size" "1.2em"
+                                        ]
+                                        [ text game.name ]
+                                    ]
                                 , div
                                     [ style "color" "#666" ]
                                     [ div [] [ text ("Players: " ++ String.fromInt game.minPlayers ++ "-" ++ String.fromInt game.maxPlayers) ]
@@ -234,39 +269,71 @@ view model =
                 , style "border-radius" "8px"
                 , style "height" "fit-content"
                 ]
-                [ case model.selectedGame of
-                    Just game ->
-                        div
+                [ let
+                    selectedGamesCount =
+                        Set.size model.selectedGames
+
+                    selectedGamesList =
+                        List.filter (\game -> Set.member game.id model.selectedGames) model.games
+                  in
+                  if selectedGamesCount > 0 then
+                    div
+                        [ style "display" "flex"
+                        , style "flex-direction" "column"
+                        , style "gap" "15px"
+                        ]
+                        [ h2 [] [ text ("Selected Games (" ++ String.fromInt selectedGamesCount ++ ")") ]
+                        , div
                             [ style "display" "flex"
                             , style "flex-direction" "column"
-                            , style "gap" "15px"
+                            , style "gap" "20px"
                             ]
-                            [ h2 [] [ text "Selected Game" ]
-                            , div
-                                [ style "color" "#666" ]
-                                [ div [] [ text ("Name: " ++ game.name) ]
-                                , div [] [ text ("Players: " ++ String.fromInt game.minPlayers ++ "-" ++ String.fromInt game.maxPlayers) ]
-                                , div [] [ text ("Play time: " ++ String.fromInt game.playingTime ++ " minutes") ]
-                                ]
-                            , button
-                                [ style "background" "#ff4444"
-                                , style "color" "white"
-                                , style "border" "none"
-                                , style "padding" "10px 20px"
-                                , style "border-radius" "4px"
-                                , style "cursor" "pointer"
-                                , style "margin-top" "10px"
-                                , onClick ClearSelection
-                                ]
-                                [ text "Clear Selection" ]
+                            (List.map
+                                (\game ->
+                                    div
+                                        [ style "display" "flex"
+                                        , style "gap" "20px"
+                                        , style "padding" "15px"
+                                        , style "background" "#fff"
+                                        , style "border-radius" "8px"
+                                        ]
+                                        [ img
+                                            [ style "width" "80px"
+                                            , style "height" "80px"
+                                            , style "object-fit" "cover"
+                                            , style "border-radius" "4px"
+                                            , src game.thumbnail
+                                            ]
+                                            []
+                                        , div
+                                            [ style "color" "#666" ]
+                                            [ div [ style "font-weight" "bold" ] [ text game.name ]
+                                            , div [] [ text ("Players: " ++ String.fromInt game.minPlayers ++ "-" ++ String.fromInt game.maxPlayers) ]
+                                            , div [] [ text ("Play time: " ++ String.fromInt game.playingTime ++ " min") ]
+                                            ]
+                                        ]
+                                )
+                                selectedGamesList
+                            )
+                        , button
+                            [ style "background" "#ff4444"
+                            , style "color" "white"
+                            , style "border" "none"
+                            , style "padding" "10px 20px"
+                            , style "border-radius" "4px"
+                            , style "cursor" "pointer"
+                            , style "margin-top" "10px"
+                            , onClick ClearSelection
                             ]
+                            [ text "Clear All Selections" ]
+                        ]
 
-                    Nothing ->
-                        div
-                            [ style "color" "#666"
-                            , style "font-style" "italic"
-                            ]
-                            [ text "Select a game from the list" ]
+                  else
+                    div
+                        [ style "color" "#666"
+                        , style "font-style" "italic"
+                        ]
+                        [ text "Select games from the list" ]
                 ]
             ]
         ]
