@@ -2,3 +2,9 @@
 /.junie/
 /elm-stuff/
 /build/
+
+# amplify
+node_modules
+.amplify
+amplify_outputs*
+amplifyconfiguration*
