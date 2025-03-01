@@ -1,3 +1,20 @@
 {
-  "type": "module"
+  "name": "gamenight-backend",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "GameNight Amplify Backend",
+  "dependencies": {
+    "@aws-amplify/backend": "^0.6.0",
+    "@aws-amplify/backend-cli": "^0.9.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "vitest": "^1.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
 }
