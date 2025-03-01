@@ -68,8 +68,8 @@ update msg model =
                     , Cmd.none
                     )
 
-                Err err ->
-                    ( { model | status = Failed ("Failed to load games: " ++ Debug.toString err) }
+                Err _ ->
+                    ( { model | status = Failed "Failed to load games." }
                     , Cmd.none
                     )
 
