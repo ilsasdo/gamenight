@@ -1,0 +1,25 @@
+{
+    "api": {
+        "gamenight": {
+            "dependsOn": [
+                {
+                    "category": "function",
+                    "resourceName": "gamenightFunction",
+                    "attributes": [
+                        "Name",
+                        "Arn"
+                    ]
+                }
+            ],
+            "providerPlugin": "awscloudformation",
+            "service": "API Gateway"
+        }
+    },
+    "function": {
+        "gamenightFunction": {
+            "build": true,
+            "providerPlugin": "awscloudformation",
+            "service": "Lambda"
+        }
+    }
+}

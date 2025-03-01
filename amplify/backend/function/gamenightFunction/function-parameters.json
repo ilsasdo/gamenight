@@ -1,0 +1,13 @@
+{
+    "lambdaLayers": [],
+    "environmentVariables": {},
+    "permissions": {
+        "storage": {
+            "permissions": []
+        },
+        "function": {
+            "permissions": []
+        }
+    },
+    "runtime": "nodejs18.x"
+}
